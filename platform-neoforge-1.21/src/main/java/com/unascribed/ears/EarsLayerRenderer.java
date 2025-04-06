@@ -5,10 +5,12 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
+import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 import com.unascribed.ears.mixin.AccessorHumanoidArmorLayer;
 import com.unascribed.ears.mixin.AccessorLivingEntityRenderer;
+import com.unascribed.ears.mixin.AccessorModelPart;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.PartNames;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
@@ -111,9 +113,36 @@ public class EarsLayerRenderer extends RenderLayer<AbstractClientPlayer, PlayerM
 		@Override
 		protected void doAnchorTo(BodyPart part, ModelPart modelPart) {
 			modelPart.translateAndRotate(matrices);
-			Cube cuboid = modelPart.getRandomCube(NotRandom119.INSTANCE);
-			matrices.scale(1/16f, 1/16f, 1/16f);
-			matrices.translate(cuboid.minX, cuboid.maxY, cuboid.minZ);
+
+			final float BASE_SCALE = 1 / 16f;
+			final float Z_FIGHTING_OFFSET = 1.0005f;
+			float scale = (part == BodyPart.HEAD) ? Z_FIGHTING_OFFSET * BASE_SCALE : BASE_SCALE;
+
+			Cube cuboid = null;
+
+			try {
+				cuboid = modelPart.getRandomCube(NotRandom119.INSTANCE);
+			} catch (ArrayIndexOutOfBoundsException e) {
+				Map<String, ModelPart> children = ((AccessorModelPart) (Object) modelPart).ears$getChildren();
+
+				for (ModelPart child : children.values()) {
+					if (!child.isEmpty()) {
+						cuboid = child.getRandomCube(NotRandom119.INSTANCE);
+						break;
+					}
+				}
+			}
+
+			if (cuboid == null) {
+				return;
+			}
+
+			matrices.scale(scale, scale, scale);
+			matrices.translate(
+					cuboid.minX,
+					modelPart.isEmpty() ? cuboid.maxY + 24 : cuboid.maxY,
+					cuboid.minZ
+			);
 		}
 		
 		@Override

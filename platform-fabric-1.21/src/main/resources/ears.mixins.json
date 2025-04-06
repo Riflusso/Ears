@@ -7,12 +7,13 @@
   "mixins": [
   ],
   "client": [
-    "MixinPlayerEntityRenderer",
-    "MixinPlayerSkinTexture",
+    "AccessorArmorFeatureRenderer",
+    "AccessorLivingEntityRenderer",
+    "AccessorModelPart",
     "AccessorPlayerEntityModel",
     "MixinElytraFeatureRenderer",
-    "AccessorArmorFeatureRenderer",
-    "AccessorLivingEntityRenderer"
+    "MixinPlayerEntityRenderer",
+    "MixinPlayerSkinTexture"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -12,9 +12,7 @@ import java.util.Set;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.unascribed.ears.mixin.AccessorHumanoidArmorLayer;
-import com.unascribed.ears.mixin.AccessorLivingEntityRenderer;
-import com.unascribed.ears.mixin.AccessorTextureManager;
+import com.unascribed.ears.mixin.*;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.PartNames;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
@@ -38,7 +36,6 @@ import com.unascribed.ears.common.debug.EarsLog;
 import com.unascribed.ears.common.render.IndirectEarsRenderDelegate;
 import com.unascribed.ears.common.render.EarsRenderDelegate.BodyPart;
 import com.unascribed.ears.common.util.Decider;
-import com.unascribed.ears.mixin.AccessorPlayerModel;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PlayerModel;
@@ -114,9 +111,36 @@ public class EarsLayerRenderer extends RenderLayer<PlayerRenderState, PlayerMode
 		@Override
 		protected void doAnchorTo(BodyPart part, ModelPart modelPart) {
 			modelPart.translateAndRotate(matrices);
-			Cube cuboid = modelPart.getRandomCube(NotRandom119.INSTANCE);
-			matrices.scale(1/16f, 1/16f, 1/16f);
-			matrices.translate(cuboid.minX, cuboid.maxY, cuboid.minZ);
+
+			final float BASE_SCALE = 1 / 16f;
+			final float Z_FIGHTING_OFFSET = 1.0005f;
+			float scale = (part == BodyPart.HEAD) ? Z_FIGHTING_OFFSET * BASE_SCALE : BASE_SCALE;
+
+			Cube cuboid = null;
+
+			try {
+				cuboid = modelPart.getRandomCube(NotRandom119.INSTANCE);
+			} catch (ArrayIndexOutOfBoundsException e) {
+				Map<String, ModelPart> children = ((AccessorModelPart) (Object) modelPart).ears$getChildren();
+
+				for (ModelPart child : children.values()) {
+					if (!child.isEmpty()) {
+						cuboid = child.getRandomCube(NotRandom119.INSTANCE);
+						break;
+					}
+				}
+			}
+
+			if (cuboid == null) {
+				return;
+			}
+
+			matrices.scale(scale, scale, scale);
+			matrices.translate(
+					cuboid.minX,
+					modelPart.isEmpty() ? cuboid.maxY + 24 : cuboid.maxY,
+					cuboid.minZ
+			);
 		}
 
 		@Override

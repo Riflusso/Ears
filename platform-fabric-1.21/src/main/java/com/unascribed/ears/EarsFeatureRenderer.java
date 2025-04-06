@@ -8,7 +8,9 @@ import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
+import com.unascribed.ears.mixin.AccessorModelPart;
 import net.minecraft.component.type.DyedColorComponent;
 import net.minecraft.entity.player.PlayerModelPart;
 import net.minecraft.item.ArmorMaterial;
@@ -97,9 +99,36 @@ public class EarsFeatureRenderer extends FeatureRenderer<AbstractClientPlayerEnt
 		@Override
 		protected void doAnchorTo(BodyPart part, ModelPart modelPart) {
 			modelPart.rotate(matrices);
-			Cuboid cuboid = modelPart.getRandomCuboid(NotRandom1193.INSTANCE);
-			matrices.scale(1/16f, 1/16f, 1/16f);
-			matrices.translate(cuboid.minX, cuboid.maxY, cuboid.minZ);
+
+			final float BASE_SCALE = 1 / 16f;
+			final float Z_FIGHTING_OFFSET = 1.0005f;
+			float scale = (part == BodyPart.HEAD) ? Z_FIGHTING_OFFSET * BASE_SCALE : BASE_SCALE;
+
+			Cuboid cuboid = null;
+
+			try {
+				cuboid = modelPart.getRandomCuboid(NotRandom1193.INSTANCE);
+			} catch (ArrayIndexOutOfBoundsException e) {
+				Map<String, ModelPart> children = ((AccessorModelPart) (Object) modelPart).ears$getChildren();
+
+				for (ModelPart child : children.values()) {
+					if (!child.isEmpty()) {
+						cuboid = child.getRandomCuboid(NotRandom1193.INSTANCE);
+						break;
+					}
+				}
+			}
+
+			if (cuboid == null) {
+				return;
+			}
+
+			matrices.scale(scale, scale, scale);
+			matrices.translate(
+					cuboid.minX,
+					modelPart.isEmpty() ? cuboid.maxY + 24 : cuboid.maxY,
+					cuboid.minZ
+			);
 		}
 		
 		@Override
